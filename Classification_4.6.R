@@ -9,7 +9,7 @@ str(Smarket)
 pairs(Smarket)
 cor(Smarket[,-9])  #look at the pairwise correlation of the predictors
 
-# Logistic Regression to classify the response variable, Direction
+# --------- Logistic Regression to classify the response variable, Direction
 glm.fits <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Smarket, family = binomial)
 summary(glm.fits)
 
@@ -42,3 +42,27 @@ glm.pred[glm.probs > 0.5] <- "Up"  #a character vector of Up or Down based on pr
 table(glm.pred, Direction.2005)
 mean(glm.pred == Direction.2005) #the % of predictions we got correct is worse than before
 mean(glm.pred != Direction.2005) #test error rate (1 - correct rate)
+
+#fit a glm with only 2 predictors and remove those that are not significant
+glm.fits <- glm(Direction ~ Lag1 + Lag2, data = Smarket, family = binomial, subset = train)
+glm.probs <- predict(glm.fits, Smarket.2005, type = "response")
+glm.pred <- rep("Down", 252)
+glm.pred[glm.probs > .5] <- "Up"
+table(glm.pred, Direction.2005)
+mean(glm.pred == Direction.2005) #accuracy rate
+mean(glm.pred != Direction.2005) #test error rate
+
+#Finally, predict a probability with specific values of predictors
+predict(glm.fits, newdata = data.frame(Lag1 = c(1.2, 1.5), 
+                                       Lag2 = c(1.1, -0.8)), type = "response")
+
+# ------------------- K-Nearest Neighbors KNN -----------
+library(class)
+attach(Smarket)
+train.X <- cbind(Lag1, Lag2)[train,] #training data from 2001-2004
+test.X <- cbind(Lag1, Lag2)[!train,] #test data
+train.Direction <- Direction[train] #classification values for Direction from 2001-2004
+
+set.seed(1)
+knn.pred <- knn(train.X, test.X, train.Direction, k = 3)
+table(knn.pred, Direction.2005)
